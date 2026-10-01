@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta name="description" content="LogicFlow is a browser-based digital logic circuit simulator.">
+		<meta name="theme-color" content="#172b2d">
+		<title>LogicFlow - Digital Logic Circuit Simulator</title>
+		<link rel="stylesheet" href="team/Gunish-Singh/styling/style.css">
+		<script type="module" src="app/bootstrap.js"></script>
+	</head>
+	<body>
+		<div class="app-shell" id="app">
+			<header class="topbar">
+				<a class="brand" href="#workspace" aria-label="LogicFlow home">
+					<span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+					<span>Logic<span class="brand-accent">Flow</span><small> DIGITAL LOGIC LAB</small></span>
+				</a>
+				<nav class="file-actions" aria-label="Circuit file actions">
+					<button type="button" data-action="new">New</button>
+					<button type="button" data-action="open">Open</button>
+					<button type="button" data-action="save">Save</button>
+					<button type="button" data-action="import">Import</button>
+					<button type="button" data-action="export">Export</button>
+				</nav>
+				<nav class="run-actions" aria-label="Simulation controls">
+					<button type="button" class="icon-button" data-action="undo" aria-label="Undo" title="Undo (Ctrl+Z)">↶</button>
+					<button type="button" class="icon-button" data-action="redo" aria-label="Redo" title="Redo (Ctrl+Y)">↷</button>
+					<span class="toolbar-divider" aria-hidden="true"></span>
+					<button type="button" class="run-button" data-action="run"><span aria-hidden="true">▶</span> Run</button>
+					<button type="button" data-action="pause">Pause</button>
+					<button type="button" data-action="stop">Stop</button>
+					  <button type="button" data-action="step" title="Advance one clock pulse">Step</button>
+					  <label class="clock-frequency">Hz <input id="clock-frequency" type="number" min="0.1" max="20" step="0.1" value="1.5" aria-label="Clock frequency in hertz"></label>
+					<button type="button" data-action="reset">Reset</button>
+					<button type="button" class="icon-button" data-action="theme" aria-label="Toggle color theme" title="Toggle theme">◐</button>
+					<button type="button" class="icon-button" data-action="help" aria-label="Help and about" title="Help and about">?</button>
+				</nav>
+			</header>
+
+			<main class="workbench" id="workspace">
+				<aside class="palette panel" aria-label="Component palette">
+					<div class="panel-heading">
+						<div><p class="eyebrow">BUILD</p><h1>Components</h1></div>
+						<span class="component-count" id="component-count">0</span>
+					</div>
+					<label class="search-box"><span class="visually-hidden">Search components</span><span aria-hidden="true">⌕</span><input id="component-search" type="search" placeholder="Find a component" autocomplete="off"></label>
+					<div id="component-list" class="component-list"></div>
+					<div class="palette-note"><span class="note-signal" aria-hidden="true"></span><p>Select a component to place it on the board. Drag blocks to reposition.</p></div>
+				</aside>
+
+				<section class="workspace-panel" aria-label="Circuit workspace">
+					<div class="canvas-toolbar">
+						<div class="canvas-title"><span class="live-dot" aria-hidden="true"></span><span id="circuit-name">Untitled circuit</span><span class="draft-tag">LOCAL</span></div>
+						<div class="canvas-tools">
+							<button type="button" data-action="grid" aria-pressed="true" title="Toggle grid">Grid <span class="toggle-indicator"></span></button>
+							<button type="button" data-action="fit" title="Fit circuit to workspace">Fit</button>
+							<button type="button" data-action="zoom-out" aria-label="Zoom out">−</button>
+							<span id="zoom-level">100%</span>
+							<button type="button" data-action="zoom-in" aria-label="Zoom in">+</button>
+						</div>
+					</div>
+					<div class="diagram-wrap">
+						<svg id="diagram" viewBox="0 0 1200 760" role="application" aria-label="Interactive circuit diagram. Select output pins and input pins to wire components." tabindex="0" xmlns="http://www.w3.org/2000/svg">
+							<title>Circuit workspace</title>
+						</svg>
+						<div class="empty-state" id="empty-state">
+							<span class="empty-glyph" aria-hidden="true">⊙</span>
+							<h2>Your circuit starts here</h2>
+							<p>Add a switch, a logic gate, and an LED from the component palette.</p>
+							<button type="button" data-action="example">Load AND example</button>
+						</div>
+					</div>
+					<footer class="statusbar" aria-live="polite">
+						<span><i class="status-led" id="simulation-indicator"></i><span id="simulation-status">Simulation stopped</span></span>
+						<span>Clock <b id="clock-state">LOW</b></span>
+						<span>Selected <b id="selected-status">None</b></span>
+						<span class="status-spacer"></span>
+						<span id="message" role="status">Ready</span>
+						<span>Zoom <b id="zoom-status">100%</b></span>
+					</footer>
+				</section>
+
+				<aside class="inspector panel" aria-label="Component inspector">
+					<div class="panel-heading"><div><p class="eyebrow">DETAILS</p><h2>Inspector</h2></div><button type="button" class="icon-button subtle" data-action="delete" aria-label="Delete selected item" title="Delete selected">⌫</button></div>
+					<div id="inspector-content" class="inspector-content"><div class="inspector-empty"><span aria-hidden="true">⌖</span><p>Select a component or wire to inspect it.</p></div></div>
+				</aside>
+			</main>
+			<input type="file" id="import-file" accept=".logicflow,application/vnd.logicflow.circuit+json,.json,application/json" aria-label="Import a LogicFlow circuit file" hidden>
+			<div class="toast" id="toast" role="status" aria-live="polite"></div>
+			<dialog id="help-dialog" aria-labelledby="help-title">
+				<form method="dialog"><button class="dialog-close" aria-label="Close help">×</button></form>
+				<p class="eyebrow">QUICK START</p><h2 id="help-title">Build a circuit</h2>
+				<ol><li>Add components from the left palette.</li><li>Click an output pin, then an input pin to connect them.</li><li>Click a switch's HIGH/LOW label to toggle its signal.</li><li>Run the simulation or inspect truth tables on a selected component.</li></ol>
+				<p class="dialog-footnote">LogicFlow · BCA Digital Logics · Jaypee Institute of Information Technology · ODD Semester 2026</p>
+			</dialog>
+			<dialog id="circuit-dialog" aria-labelledby="circuit-dialog-title">
+				<form method="dialog"><button class="dialog-close" aria-label="Close circuit dialog">×</button></form>
+				<p class="eyebrow">LOCAL CIRCUITS</p>
+				<h2 id="circuit-dialog-title">Save circuit</h2>
+				<div id="circuit-dialog-body"></div>
+			</dialog>
+		</div>
+	</body>
+</html>
