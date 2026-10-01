@@ -1,37 +1,51 @@
 # LogicFlow — Digital Logic Circuit Simulator
 
-LogicFlow is a web-based digital logic circuit simulator project for visually building circuits and exploring how logic signals propagate. It is an academic project for BCA Digital Logics at Jaypee Institute of Information Technology, developed with HTML5, CSS3, and JavaScript.
+LogicFlow is a static, browser-based digital logic circuit workbench for constructing circuits and observing signal propagation. It is an academic project for BCA Digital Logics at Jaypee Institute of Information Technology, built with HTML5, CSS3, and vanilla JavaScript.
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![Status: Under development](https://img.shields.io/badge/status-under%20development-orange.svg)
+![Status: Early functional baseline](https://img.shields.io/badge/status-early%20functional%20baseline-orange.svg)
 
-> **Development status:** The project is at its initial scaffold stage. The simulator features below are planned; they are not implemented in the current project yet.
+> **Development status:** The repository has a working early simulator baseline, but it is not yet the complete digital logic laboratory in the project specification. This README separates implemented behavior from unfinished work.
 
 ## Features
 
-The following capabilities are planned:
+Implemented in the current baseline:
 
-- Interactive circuit workspace with drag-and-drop components
-- AND, OR, NOT, NAND, NOR, XOR, and XNOR logic gates
-- Input switches and output indicators / LEDs
-- Wire connections between components
-- Real-time signal propagation and visual circuit states
-- Circuit reset
-- Save and load circuit designs
-- Truth-table-based validation
+- Searchable component palette; add components by click or drag them to the SVG workspace.
+- Select and move components, connect output pins to input pins, select and delete wires, and delete components.
+- Switches, LEDs, constants, seven basic gates, half/full adders and subtractors.
+- 2/4/8/16:1 multiplexers, 1/2/4/8/16 demultiplexers, 2-to-4/3-to-8/4-to-16 decoders, 4/8-input encoders, priority encoders, and even/odd parity generation/checking.
+- D, SR, JK, T, and master-slave flip-flops; 4-bit SISO/SIPO/PISO/PIPO registers; 4-bit synchronous, ring, Johnson, ripple-sequence, and modulo-N counters.
+- Iterative graph signal propagation, visual HIGH/LOW states, an editable AND example, combinational truth tables, run/pause/stop/step controls, reset, zoom, grid toggle, dark theme, and local save/open plus JSON import/export.
+- Multi-select, group movement, copy/paste with internal wires preserved, duplicate, bulk delete, middle-button/Shift-drag pan, and basic undo/redo for component and wire edits.
+- Adjustable clock frequency from 0.1 to 20 Hz.
+
+Not implemented or not yet complete:
+
+- Multi-bit buses and configurable register/counter widths.
+- Binary input/output components with formatted multi-bit values.
+- Component rotation and a larger built-in example library beyond the editable AND example.
+- Complete state-table inspection, every requested example circuit, and comprehensive end-to-end tests for all UI actions.
+- A delay-accurate ripple counter model; its current four-bit implementation produces the binary ripple-counter sequence without modeling intermediate stage delays.
+
+See [docs/testing.md](docs/testing.md) and [docs/usage.md](docs/usage.md) for verification and usage details.
+
+## Circuit File Format
+
+Export produces a versioned `.logicflow` file using the `application/vnd.logicflow.circuit+json` MIME type. Import accepts native `.logicflow` files and legacy raw circuit `.json` files. See [docs/file-format.md](docs/file-format.md) for the schema and versioning rules.
 
 ## Technologies
 
 - HTML5 for document structure
 - CSS3 for presentation
-- JavaScript for planned circuit interaction and simulation logic
-- HTML5 Canvas or SVG for planned circuit rendering
+- JavaScript ES modules for circuit data, simulation, component logic, storage, and UI integration
+- SVG for interactive circuit rendering
 
-No frontend framework or backend is used by this project.
+No frontend framework, runtime dependency, backend, or external API is used.
 
-## How the Simulator Will Work
+## How the Simulator Works
 
-The intended workflow is to place gates and input/output components in a circuit workspace, connect them with wires, and change input switches. A simulation engine will evaluate the connected logic and update output indicators to show signal states. Truth tables will be used to validate gate and circuit behavior. These interactions are planned and are not available yet.
+The workspace stores components and wires as a graph separate from the SVG view. Each component has typed input/output pins and a registered evaluator. The simulation engine propagates pin values through wires and repeatedly evaluates combinational components until outputs stabilize or the pass limit is reached. Sequential components keep state and update on a rising clock edge. The inspector builds truth tables from the same combinational evaluator used by the simulator.
 
 ## Project Objectives
 
@@ -47,11 +61,23 @@ LogicFlow/
 ├── assets/
 │   ├── icons/
 │   └── images/
-├── css/
-│   └── style.css       # planned stylesheet
-├── docs/               # project documentation
-├── js/
-│   └── app.js          # planned application entry point
+├── app/
+│   ├── app.js          # application integration and UI events
+│   └── bootstrap.js    # static application entry point
+├── docs/               # architecture, behavior, file format, testing, and team docs
+├── shared/
+│   ├── components/     # component definitions and registry
+│   ├── history/        # undo/redo snapshots
+│   ├── import-export/  # JSON circuit documents
+│   ├── renderer/       # shared SVG geometry
+│   ├── storage/        # localStorage persistence
+│   └── utilities/      # numeric validation
+├── team/
+│   ├── Gunish-Singh/   # UI, palette, workspace, styling
+│   ├── Madhav-Gupta/   # sequential logic, tables, tests
+│   ├── Mohammad-Arsh/  # circuit model, simulation, clock
+│   ├── Mohit-Pangti/   # gates and combinational logic
+│   └── Parikshit-Singh/# integration, examples, coordination
 ├── .gitignore
 ├── CONTRIBUTING.md
 ├── index.html
@@ -60,26 +86,26 @@ LogicFlow/
 └── SECURITY.md
 ```
 
-The `css/style.css` and `js/app.js` files are referenced by the entry page but have not been added yet.
+The folders are ownership boundaries for one integrated application, not separate applications. See [docs/team-structure.md](docs/team-structure.md) for interfaces and branch ownership.
 
 ## Team
 
-| Name | 
-| --- | 
-| Parikshit Singh | 
-| Gunish Singh | 
-| Mohammad Arsh | 
-| Mohit Pangti |
-| Madhav Gupta |
+| Member | Enrollment | Role | Responsibility |
+| --- | --- | --- | --- |
+| Parikshit Singh | BCG26143 | Group Leader | Integration, examples, documentation, coordination |
+| Gunish Singh | BCG26041 | Member | UI, palette, workspace, styling, accessibility |
+| Mohammad Arsh | BCG26260 | Member | Circuit model, simulation, clock, integration interfaces |
+| Mohit Pangti | BCG26186 | Member | Gates and combinational circuits |
+| Madhav Gupta | BCG26204 | Member | Sequential circuits, tables, and testing |
 
 
 ## Current Development Status
 
-The repository currently contains the initial project page and documentation scaffold. The interactive workspace, gates, wiring, simulation, design save/load, and truth-table validation are planned work; no simulator functionality is currently implemented.
+The application is an early functional baseline with editable graph circuits, interactive SVG wiring, real combinational evaluation, selected sequential components, persistence, JSON transfer, multi-selection, clipboard operations, pan, saved-circuit rename/delete, and a 273-check browser logic suite. It does not yet meet every item in the full project specification. The implemented ripple counter does not model stage delays, and multi-bit buses, binary I/O, full history coverage, component rotation, and the complete example library remain unfinished.
 
 ## Future Improvements
 
-Planned work includes developing the circuit workspace and rendering, implementing gate and wire interactions, building the signal propagation engine, adding design save/load, and validating circuits against truth tables. The exact sequence may change as the project develops.
+Planned improvements include multi-bit buses, configurable register widths, delay-aware ripple simulation, full history coverage, component rotation, binary I/O, complete state-table inspectors, the remaining example circuits, and broader UI/import/storage regression tests.
 
 ## Installation and Local Usage
 
@@ -93,11 +119,11 @@ Planned work includes developing the circuit workspace and rendering, implementi
 
 4. Visit `http://localhost:8000` in a browser.
 
-The current page is a development placeholder. The referenced stylesheet and JavaScript entry point are planned files and are not present yet.
+The application is currently a functional early build. It uses browser ES modules, so open it through a local static server rather than directly as a `file://` URL.
 
 ## Browser Requirements
 
-Use a current browser with support for standard HTML5, CSS3, and JavaScript. Canvas or SVG support will be needed if selected for circuit rendering. No external browser dependencies are required.
+Use a current browser with support for ES modules, SVG, Pointer Events, the HTML dialog element, and localStorage. No external browser dependencies are required.
 
 ## License
 

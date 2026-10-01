@@ -6,8 +6,8 @@ Thanks for your interest in contributing to LogicFlow. This is a student project
 
 1. Read the project README and check the current issues or project discussion before starting substantial work.
 2. Create a branch from the current default branch using one of the naming patterns below.
-3. Make a focused change using the existing HTML, CSS, and JavaScript structure. Do not add frameworks or backend services.
-4. Run the project locally with a static web server and test the changed behavior in a browser.
+3. Make a focused change in the responsible member folder. Keep shared infrastructure in `shared/` and application startup/integration in `app/`. Do not add frameworks or backend services.
+4. Run the project and the logic test page locally with a static web server. Test the changed behavior in a browser.
 5. Commit your changes and open a pull request against the default branch.
 
 ## Branch Naming
@@ -20,6 +20,13 @@ Use a short, lowercase name with a category prefix. Separate words with hyphens.
 - `feature/save-load`
 - `fix/wire-connection`
 - `docs/readme`
+- `feature/parikshit-integration`
+- `feature/gunish-ui`
+- `feature/mohammad-simulation`
+- `feature/mohit-combinational`
+- `feature/madhav-sequential`
+
+See [docs/team-structure.md](docs/team-structure.md) for ownership folders and integration points. Branches should primarily change their owner's folder; keep any required `app/` or `shared/` integration changes small and coordinated.
 
 ## Commit Messages
 
@@ -42,7 +49,7 @@ Keep each commit focused on one logical change.
 
 ## Testing
 
-There is no automated test suite configured yet. Until one is added, test changes manually in a current browser and check the browser console for errors. For circuit behavior, verify relevant input combinations against the expected truth table and check that connected outputs update as intended. Mention what you tested in the pull request.
+Run the no-dependency browser logic suite at `team/Madhav-Gupta/testing/test-runner.html` through a static server. Also check the browser console and manually test affected UI paths. For circuit behavior, compare relevant input combinations with the expected truth table and verify connected outputs update as intended. Mention automated and manual checks in the pull request.
 
 ## Pull Requests
 
