@@ -1,0 +1,52 @@
+# Operating systems
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100/
+.Trashes/
+Thumbs.db
+Thumbs.db:encryptable
+Desktop.ini
+
+# Editors and IDEs
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.swp
+*.swo
+*~
+
+# Logs and diagnostic output
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Environment files and secrets
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# Dependencies and generated output
+node_modules/
+dist/
+build/
+out/
+coverage/
+.parcel-cache/
+.cache/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.orig
+*.rej
