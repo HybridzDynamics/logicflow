@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LogicFlow Logic Validation</title>
+    <style>
+      body { max-width: 760px; margin: 48px auto; padding: 0 20px; color: #192b2e; font: 16px/1.6 "Segoe UI", sans-serif; }
+      h1 { font-size: 26px; }
+      #result { padding: 14px; border-left: 4px solid #138a67; background: #edf7ef; }
+      #result.fail { border-color: #b94333; background: #fff0ed; }
+      pre { overflow: auto; padding: 14px; background: #f1f4f1; }
+    </style>
+    <script type="module">
+      import { runLogicTests } from "./logic-tests.js";
+      const result = runLogicTests();
+      const output = document.querySelector("#result");
+      output.classList.toggle("fail", result.failures.length > 0);
+      output.textContent = result.failures.length ? `${result.failures.length} of ${result.checks} checks failed.` : `All ${result.checks} logic checks passed.`;
+      document.querySelector("#failures").textContent = result.failures.join("\n");
+    </script>
+  </head>
+  <body>
+    <h1>LogicFlow logic validation</h1>
+    <p>This browser-run suite checks gate truth tables, combinational components, and selected clocked state transitions.</p>
+    <p id="result" role="status">Running checks…</p>
+    <pre id="failures"></pre>
+  </body>
+</html>
