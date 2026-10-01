@@ -64,13 +64,13 @@ The `css/style.css` and `js/app.js` files are referenced by the entry page but h
 
 ## Team
 
-| Name | Student ID | Role |
-| --- | --- | --- |
-| Parikshit Singh | BCG26143 | Group Leader |
-| Gunish Singh | BCG26041 | Member |
-| Mohammad Arsh | BCG26260 | Member |
-| Mohit Pangti | BCG26186 | Member |
-| Madhav Gupta | BCG26204 | Member |
+| Name | 
+| --- | 
+| Parikshit Singh | 
+| Gunish Singh | 
+| Mohammad Arsh | 
+| Mohit Pangti |
+| Madhav Gupta |
 
 
 ## Current Development Status
