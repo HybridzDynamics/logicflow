@@ -48,11 +48,14 @@
 					<div id="component-list" class="component-list"></div>
 					<div class="palette-note"><span class="note-signal" aria-hidden="true"></span><p>Select a component to place it on the board. Drag blocks to reposition.</p></div>
 				</aside>
+				<button type="button" class="panel-resizer palette-resizer" data-resize="palette" role="separator" aria-orientation="vertical" aria-label="Resize component palette" title="Drag to resize component palette"></button>
 
 				<section class="workspace-panel" aria-label="Circuit workspace">
 					<div class="canvas-toolbar">
 						<div class="canvas-title"><span class="live-dot" aria-hidden="true"></span><span id="circuit-name">Untitled circuit</span><span class="draft-tag">LOCAL</span></div>
 						<div class="canvas-tools">
+							<button type="button" data-action="examples" title="Load or insert an example circuit">Load examples</button>
+							<button type="button" class="icon-button panel-toggle" data-action="toggle-palette" aria-label="Hide component palette" aria-pressed="true" title="Hide component palette">◧</button>
 							<button type="button" data-action="grid" aria-pressed="true" title="Toggle grid">Grid <span class="toggle-indicator"></span></button>
 							<button type="button" data-action="fit" title="Fit circuit to workspace">Fit</button>
 							<button type="button" data-action="zoom-out" aria-label="Zoom out">−</button>
@@ -68,7 +71,7 @@
 							<span class="empty-glyph" aria-hidden="true">⊙</span>
 							<h2>Your circuit starts here</h2>
 							<p>Add a switch, a logic gate, and an LED from the component palette.</p>
-							<button type="button" data-action="example">Load AND example</button>
+							<button type="button" data-action="examples">Load an example</button>
 						</div>
 					</div>
 					<footer class="statusbar" aria-live="polite">
@@ -80,9 +83,10 @@
 						<span>Zoom <b id="zoom-status">100%</b></span>
 					</footer>
 				</section>
+				<button type="button" class="panel-resizer inspector-resizer" data-resize="inspector" role="separator" aria-orientation="vertical" aria-label="Resize inspector" title="Drag to resize inspector"></button>
 
 				<aside class="inspector panel" aria-label="Component inspector">
-					<div class="panel-heading"><div><p class="eyebrow">DETAILS</p><h2>Inspector</h2></div><button type="button" class="icon-button subtle" data-action="delete" aria-label="Delete selected item" title="Delete selected">⌫</button></div>
+					<div class="panel-heading"><div><p class="eyebrow">DETAILS</p><h2>Inspector</h2></div><div class="panel-heading-actions"><button type="button" class="icon-button subtle" data-action="delete" aria-label="Delete selected item" title="Delete selected">⌫</button><button type="button" class="icon-button subtle" data-action="toggle-inspector" aria-label="Hide inspector" aria-pressed="true" title="Hide inspector">◨</button></div></div>
 					<div id="inspector-content" class="inspector-content"><div class="inspector-empty"><span aria-hidden="true">⌖</span><p>Select a component or wire to inspect it.</p></div></div>
 				</aside>
 			</main>
@@ -99,6 +103,12 @@
 				<p class="eyebrow">LOCAL CIRCUITS</p>
 				<h2 id="circuit-dialog-title">Save circuit</h2>
 				<div id="circuit-dialog-body"></div>
+			</dialog>
+			<dialog id="examples-dialog" class="examples-dialog" aria-labelledby="examples-title">
+				<form method="dialog"><button class="dialog-close" aria-label="Close examples">×</button></form>
+				<p class="eyebrow">CIRCUIT LIBRARY</p>
+				<h2 id="examples-title">Example circuits</h2>
+				<div id="examples-list" class="example-list"></div>
 			</dialog>
 		</div>
 	</body>
