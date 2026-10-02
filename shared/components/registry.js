@@ -7,6 +7,11 @@ export const definitions = {
   clock: { label: "Clock", inputs: [], outputs: ["Y"], configuration: { value: 0 } },
   led: { label: "LED", inputs: ["A"], outputs: [] },
   output: { label: "Output", inputs: ["A"], outputs: [] },
+  logicProbe: { label: "Logic Probe", inputs: ["A"], outputs: [] },
+  binaryDisplay: { label: "4-bit Binary Display", inputs: ["D3", "D2", "D1", "D0"], outputs: [] },
+  decimalDisplay: { label: "Decimal Display", inputs: ["D3", "D2", "D1", "D0"], outputs: [] },
+  hexDisplay: { label: "Hex Display", inputs: ["D3", "D2", "D1", "D0"], outputs: [] },
+  sevenSegment: { label: "7-Segment Display", inputs: ["D3", "D2", "D1", "D0"], outputs: [] },
   const0: { label: "Constant 0", inputs: [], outputs: ["Y"] },
   const1: { label: "Constant 1", inputs: [], outputs: ["Y"] },
   and: gate("AND", binary, (v) => v.every(Boolean)),
@@ -73,7 +78,7 @@ export function initialState(type, configuration = {}) {
 }
 
 export function categoryFor(type) {
-  if (["switch", "clock", "led", "output", "const0", "const1"].includes(type)) return "Inputs / outputs";
+  if (["switch", "clock", "led", "output", "logicProbe", "binaryDisplay", "decimalDisplay", "hexDisplay", "sevenSegment", "const0", "const1"].includes(type)) return "Inputs / outputs";
   if (["and", "or", "not", "nand", "nor", "xor", "xnor"].includes(type)) return "Basic logic";
   if (["halfAdder", "fullAdder", "halfSubtractor", "fullSubtractor"].includes(type)) return "Arithmetic";
   if (type.startsWith("mux") || type.startsWith("demux")) return "Data routing";
