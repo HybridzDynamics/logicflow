@@ -1,5 +1,7 @@
 import { Circuit } from "../../Mohammad-Arsh/circuit-model/circuit.js";
+import { Simulation } from "../../Mohammad-Arsh/simulation-engine/simulation.js";
 import { evaluateCombinational } from "../../Mohit-Pangti/combinational/evaluate.js";
+import { buildExample, exampleCatalog } from "../../Parikshit-Singh/examples/circuits.js";
 import { evaluateSequential } from "../flip-flops/sequential.js";
 import { loadCircuit, saveCircuit, renameCircuit, deleteCircuit } from "../../../shared/storage/storage.js";
 import { exportCircuit, parseCircuitFile, LOGICFLOW_FILE_EXTENSION } from "../../../shared/import-export/circuit-file.js";
@@ -104,6 +106,65 @@ export function runLogicTests() {
   let invalidDocumentRejected = false;
   try { new Circuit({ version: 9, components: [], wires: [] }); } catch { invalidDocumentRejected = true; }
   assert("unsupported circuit version rejected", [Number(invalidDocumentRejected)], [1]);
+
+  const exampleLedOutputs = {
+    and: [1], or: [1], xor: [1], "half-adder": [0, 1], "half-subtractor": [1, 1],
+    "full-adder": [0, 1], "full-subtractor": [0, 1], mux: [1], mux4: [1], decoder: [0, 1, 0, 0],
+    encoder: [0, 1, 1], parity: [1], "d-flip-flop": [0, 1], counter: [0, 0, 0, 0], "pipo-register": [0, 0, 0, 0], "traffic-light": [1, 0, 0], "parity-checker": [1], "ripple-adder": [0],
+    "ripple-subtractor": [0], "equality-comparator": [1], "seven-segment": []
+  };
+  for (const example of exampleCatalog) {
+    const circuit = new Circuit();
+    buildExample(circuit, example.id);
+    assert(`${example.id} example stabilizes`, [Number(new Simulation(circuit).propagate())], [1]);
+    assert(`${example.id} example has components`, [Number(circuit.components.size > 0)], [1]);
+    const ledOutputs = [...circuit.components.values()].filter((component) => component.type === "led").map((component) => component.inputs[0].value);
+    assert(`${example.id} example outputs`, ledOutputs, exampleLedOutputs[example.id]);
+  }
+  const rippleExample = new Circuit();
+  buildExample(rippleExample, "ripple-adder");
+  new Simulation(rippleExample).propagate();
+  const rippleDisplay = [...rippleExample.components.values()].find((component) => component.type === "binaryDisplay");
+  assert("ripple adder example calculates 5 + 3", [rippleDisplay.inputs.map((pin) => pin.value).join("")], ["1000"]);
+  const subtractorExample = new Circuit();
+  buildExample(subtractorExample, "ripple-subtractor");
+  new Simulation(subtractorExample).propagate();
+  const subtractorDisplay = [...subtractorExample.components.values()].find((component) => component.type === "binaryDisplay");
+  assert("ripple subtractor example calculates 9 - 5", [subtractorDisplay.inputs.map((pin) => pin.value).join("")], ["0100"]);
+  const segmentExample = new Circuit();
+  buildExample(segmentExample, "seven-segment");
+  new Simulation(segmentExample).propagate();
+  const segmentDisplay = [...segmentExample.components.values()].find((component) => component.type === "sevenSegment");
+  assert("seven-segment example receives hex A", [segmentDisplay.inputs.map((pin) => pin.value).join("")], ["1010"]);
+  const counterExample = new Circuit();
+  buildExample(counterExample, "counter");
+  const counterSimulation = new Simulation(counterExample);
+  counterSimulation.propagate();
+  [...counterExample.components.values()].find((component) => component.type === "clock").configuration.value = 1;
+  counterSimulation.stepClock();
+  const counterBits = [...counterExample.components.values()].filter((component) => component.type === "led").map((component) => component.inputs[0].value);
+  assert("counter example advances on clock step", counterBits, [1, 0, 0, 0]);
+  const registerExample = new Circuit();
+  buildExample(registerExample, "pipo-register");
+  const registerSimulation = new Simulation(registerExample);
+  registerSimulation.propagate();
+  [...registerExample.components.values()].find((component) => component.type === "clock").configuration.value = 1;
+  registerSimulation.stepClock();
+  const registerBits = [...registerExample.components.values()].filter((component) => component.type === "led").map((component) => component.inputs[0].value);
+  assert("PIPO example loads data on clock edge", registerBits, [0, 1, 0, 1]);
+  const trafficExample = new Circuit();
+  buildExample(trafficExample, "traffic-light");
+  const trafficSimulation = new Simulation(trafficExample);
+  trafficSimulation.propagate();
+  const trafficClock = [...trafficExample.components.values()].find((component) => component.type === "clock");
+  const trafficLights = () => [...trafficExample.components.values()].filter((component) => component.type === "led").map((component) => component.inputs[0].value);
+  assert("traffic light starts green", trafficLights(), [1, 0, 0]);
+  trafficClock.configuration.value = 1; trafficSimulation.stepClock();
+  assert("traffic light advances to yellow", trafficLights(), [0, 1, 0]);
+  trafficClock.configuration.value = 0; trafficSimulation.stepClock(); trafficClock.configuration.value = 1; trafficSimulation.stepClock();
+  assert("traffic light advances to red", trafficLights(), [0, 0, 1]);
+  trafficClock.configuration.value = 0; trafficSimulation.stepClock(); trafficClock.configuration.value = 1; trafficSimulation.stepClock();
+  assert("traffic light returns to green", trafficLights(), [1, 0, 0]);
 
   const storageKey = "logicflow.circuits.v1";
   const previousStorage = localStorage.getItem(storageKey);
