@@ -18,7 +18,11 @@ export class Simulation {
       stable = true;
       for (const component of this.circuit.components.values()) {
         if (definitions[component.type].sequential) {
-          component.outputs.forEach((pin, index) => { pin.value = sequentialOutputs(component)[index] ?? 0; });
+          const next = sequentialOutputs(component);
+          next.forEach((value, index) => {
+            if (component.outputs[index] && component.outputs[index].value !== value) stable = false;
+            if (component.outputs[index]) component.outputs[index].value = value;
+          });
           continue;
         }
         const next = evaluateCombinational(component);
