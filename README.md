@@ -90,13 +90,13 @@ The folders are ownership boundaries for one integrated application, not separat
 
 ## Team
 
-| Member | Enrollment | Role | Responsibility |
-| --- | --- | --- | --- |
-| Parikshit Singh | BCG26143 | Group Leader | Integration, examples, documentation, coordination |
-| Gunish Singh | BCG26041 | Member | UI, palette, workspace, styling, accessibility |
-| Mohammad Arsh | BCG26260 | Member | Circuit model, simulation, clock, integration interfaces |
-| Mohit Pangti | BCG26186 | Member | Gates and combinational circuits |
-| Madhav Gupta | BCG26204 | Member | Sequential circuits, tables, and testing |
+| Member | Responsibility |
+| --- | --- |
+| Parikshit Singh | Integration, examples, documentation, coordination |
+| Gunish Singh |  UI, palette, workspace, styling, accessibility |
+| Mohammad Arsh | Circuit model, simulation, clock, integration interfaces |
+| Mohit Pangti  | Gates and combinational circuits |
+| Madhav Gupta  | Sequential circuits, tables, and testing |
 
 
 ## Current Development Status
