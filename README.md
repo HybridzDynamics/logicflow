@@ -1,4 +1,4 @@
-# LogicFlow — Digital Logic Circuit Simulator
+# Yusin — Digital Logic Circuit Simulator
 
 LogicFlow is a static, browser-based digital logic circuit workbench for constructing circuits and observing signal propagation. It is an academic project for BCA Digital Logics at Jaypee Institute of Information Technology, built with HTML5, CSS3, and vanilla JavaScript.
 
