@@ -5,6 +5,7 @@ import { buildExample, exampleCatalog } from "../../Parikshit-Singh/examples/cir
 import { evaluateSequential } from "../flip-flops/sequential.js";
 import { loadCircuit, saveCircuit, renameCircuit, deleteCircuit } from "../../../shared/storage/storage.js";
 import { exportCircuit, parseCircuitFile, LOGICFLOW_FILE_EXTENSION } from "../../../shared/import-export/circuit-file.js";
+import { History } from "../../../shared/history/history.js";
 
 export function runLogicTests() {
   const failures = [];
@@ -226,6 +227,21 @@ export function runLogicTests() {
     try { saveCircuit("   ", saved); } catch { emptyNameRejected = true; }
     assert("empty circuit name rejected", [Number(emptyNameRejected)], [1]);
   } catch (error) { failures.push(`hardened storage operations: ${error.message}`); checks += 1; }
+
+  const historyCircuit = new Circuit();
+  const historyComponent = historyCircuit.add("switch", 40, 60, { value: 0 });
+  const history = new History(historyCircuit);
+  history.checkpoint();
+  historyComponent.x = 500;
+  historyComponent.y = 400;
+  historyComponent.configuration.value = 1;
+  historyComponent.outputs[0].value = 1;
+  assert("undo restores in-place mutations", [history.undo()], [true]);
+  const restoredComponent = historyCircuit.components.get(historyComponent.id);
+  assert("undo restores position and values", [restoredComponent.x, restoredComponent.y, restoredComponent.configuration.value, restoredComponent.outputs[0].value], [40, 60, 0, 0]);
+  assert("redo reapplies mutations", [history.redo()], [true]);
+  const redoneComponent = historyCircuit.components.get(historyComponent.id);
+  assert("redo restores mutated state", [redoneComponent.x, redoneComponent.configuration.value], [500, 1]);
 
   return { checks, failures };
 }

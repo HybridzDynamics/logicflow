@@ -5,11 +5,12 @@ export class Simulation {
   constructor(circuit) { this.circuit = circuit; this.maxPasses = 100; }
 
   propagate() {
+    const maxPasses = Math.max(this.maxPasses, this.circuit.components.size * 4);
     for (const component of this.circuit.components.values()) {
       component.inputs.forEach((pin) => { pin.value = 0; });
     }
     let stable = false;
-    for (let pass = 0; pass < this.maxPasses && !stable; pass += 1) {
+    for (let pass = 0; pass < maxPasses && !stable; pass += 1) {
       for (const wire of this.circuit.wires.values()) {
         const from = this.circuit.components.get(wire.sourceId);
         const to = this.circuit.components.get(wire.targetId);

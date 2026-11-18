@@ -6,7 +6,7 @@ export function advanceCounter(component) {
   if (!isCounter(component.type)) return false;
   const state = component.state;
   const raw = Number(state.value);
-  const value = Number.isFinite(raw) ? Math.floor(raw) : 0;
+  const value = ((Number.isFinite(raw) ? Math.floor(raw) : 0) % 16 + 16) % 16;
   switch (component.type) {
     case "ringCounter4": state.value = ((value << 1) & 15) | ((value >> 3) & 1); break;
     case "johnsonCounter4": state.value = ((value << 1) & 15) | (1 - ((value >> 3) & 1)); break;

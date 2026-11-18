@@ -1,7 +1,7 @@
 import { wirePath } from "../../../shared/renderer/wire-path.js";
 
 const NS = "http://www.w3.org/2000/svg";
-const NODE_WIDTH = 156;
+export const NODE_WIDTH = 156;
 const PIN_TOP = 52;
 const PIN_GAP = 22;
 const animatedComponents = new WeakSet();

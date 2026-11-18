@@ -68,9 +68,9 @@ export class Circuit {
       const component = this.add(saved.type, finiteNumber(saved.x, null) + offset, finiteNumber(saved.y, null) + offset, structuredClone(saved.configuration || {}));
       component.name = typeof saved.name === "string" ? saved.name : component.name;
       component.rotation = Number(saved.rotation) || 0;
-      component.state = structuredClone(saved.state || component.state);
-      component.inputs.forEach((pin, index) => { pin.value = Number(saved.inputs[index]?.value) || 0; });
-      component.outputs.forEach((pin, index) => { pin.value = Number(saved.outputs[index]?.value) || 0; });
+      component.state = saved.state && typeof saved.state === "object" && !Array.isArray(saved.state) ? sanitizeState(saved.state) : component.state;
+      component.inputs.forEach((pin, index) => { pin.value = Number(saved.inputs?.[index]?.value) || 0; });
+      component.outputs.forEach((pin, index) => { pin.value = Number(saved.outputs?.[index]?.value) || 0; });
       idMap.set(saved.id, component.id);
     }
     for (const wire of snapshot.wires) {
@@ -82,7 +82,7 @@ export class Circuit {
   }
 
   serialize() {
-    return { version: 1, components: [...this.components.values()], wires: [...this.wires.values()] };
+    return structuredClone({ version: 1, components: [...this.components.values()], wires: [...this.wires.values()] });
   }
 
   load(data) {
@@ -124,8 +124,8 @@ function sanitizeState(state) {
   const clone = structuredClone(state);
   for (const key of STATE_NUMERIC_FIELDS) {
     if (key in clone) {
-      const number = Number(clone[key]);
-      clone[key] = Number.isFinite(number) ? number : 0;
+      const number = Math.floor(Number(clone[key]));
+      clone[key] = Number.isFinite(number) && number >= 0 ? number : 0;
     }
   }
   return clone;

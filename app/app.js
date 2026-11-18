@@ -5,7 +5,7 @@ import { History } from "../shared/history/history.js";
 import { listCircuits, loadCircuit, saveCircuit } from "../shared/storage/storage.js";
 import { renameCircuit, deleteCircuit } from "../shared/storage/storage.js";
 import { evaluateCombinational } from "../team/Mohit-Pangti/combinational/evaluate.js";
-import { renderDiagram, pinPosition, updateWirePreview, componentHeight } from "../team/Gunish-Singh/workspace/renderer.js";
+import { renderDiagram, pinPosition, updateWirePreview, componentHeight, NODE_WIDTH } from "../team/Gunish-Singh/workspace/renderer.js";
 import { createPalette } from "../team/Gunish-Singh/component-palette/palette.js";
 import { SimulationClock } from "../team/Mohammad-Arsh/clock-system/clock.js";
 import { buildExample, exampleCatalog } from "../team/Parikshit-Singh/examples/circuits.js";
@@ -176,6 +176,20 @@ function renderKarnaughMaps(component, rows) {
   return container;
 }
 
+const analysisCache = new WeakMap();
+
+function analysisSections(component) {
+  let cached = analysisCache.get(component);
+  if (cached) return cached;
+  const rows = truthRows(component);
+  cached = [
+    inspectorSection("Truth table", renderTruthTable(component, rows)),
+    inspectorSection("Karnaugh maps", renderKarnaughMaps(component, rows))
+  ];
+  analysisCache.set(component, cached);
+  return cached;
+}
+
 function inspectorSection(title, content) {
   const section = document.createElement("section"); section.className = "inspector-section";
   const heading = document.createElement("h3"); heading.textContent = title;
@@ -260,7 +274,7 @@ function renderInspector() {
   }
   if (definitions[component.type].sequential) {
     const details = document.createElement("div");
-    details.textContent = component.state.value !== undefined ? `State ${component.state.value} · binary ${component.state.value.toString(2).padStart(component.state.width || component.outputs.length, "0")}` : `Q = ${component.state.q}`;
+    details.textContent = component.state.value !== undefined ? `State ${component.state.value} · binary ${component.state.value.toString(2).padStart(component.state.width || component.outputs.length, "0")}` : `Q = ${component.state.q ?? 0}`;
     inspector.append(inspectorSection("Stored state", details));
   }
   if (["logicProbe", "binaryDisplay", "decimalDisplay", "hexDisplay", "sevenSegment"].includes(component.type)) {
@@ -272,9 +286,7 @@ function renderInspector() {
     inspector.append(inspectorSection("Display value", details));
   }
   if (component.inputs.length && component.outputs.length && component.inputs.length <= 4 && !definitions[component.type].sequential) {
-    const rows = truthRows(component);
-    inspector.append(inspectorSection("Truth table", renderTruthTable(component, rows)));
-    inspector.append(inspectorSection("Karnaugh maps", renderKarnaughMaps(component, rows)));
+    inspector.append(...analysisSections(component));
   }
   const position = document.createElement("div"); position.textContent = `x ${Math.round(component.x)} · y ${Math.round(component.y)}`;
   inspector.append(inspectorSection("Position", position));
@@ -350,7 +362,7 @@ function fitCircuit() {
   }
   const minX = Math.min(...components.map((component) => component.x));
   const minY = Math.min(...components.map((component) => component.y));
-  const maxX = Math.max(...components.map((component) => component.x + 156));
+  const maxX = Math.max(...components.map((component) => component.x + NODE_WIDTH));
   const maxY = Math.max(...components.map((component) => component.y + componentHeight(component)));
   const padding = 64;
   const width = maxX - minX + padding * 2;
@@ -396,7 +408,7 @@ function insertExample(exampleId) {
 
   const existing = [...state.circuit.components.values()];
   const additions = [...sample.components.values()];
-  const offsetX = Math.max(...existing.map((component) => component.x + 156)) + 120 - Math.min(...additions.map((component) => component.x));
+  const offsetX = Math.max(...existing.map((component) => component.x + NODE_WIDTH)) + 120 - Math.min(...additions.map((component) => component.x));
   const offsetY = Math.min(...existing.map((component) => component.y)) - Math.min(...additions.map((component) => component.y));
   state.history.checkpoint();
   const idMap = new Map();
@@ -694,6 +706,12 @@ document.addEventListener("keydown", (event) => {
   }
   if (event.target.matches("input, textarea, select")) return;
   if (document.querySelector("dialog[open]")) return;
+  const focusedComponent = event.target.closest?.("[data-component-id]");
+  if (focusedComponent && !focusedComponent.dataset.pinKind && ["Enter", " "].includes(event.key)) {
+    selectComponent(focusedComponent.dataset.componentId, event.shiftKey);
+    event.preventDefault();
+    return;
+  }
   if (event.key === "Delete" || event.key === "Backspace") { deleteSelection(); event.preventDefault(); }
   else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") { runAction(event.shiftKey ? "redo" : "undo"); event.preventDefault(); }
   else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "y") { runAction("redo"); event.preventDefault(); }
