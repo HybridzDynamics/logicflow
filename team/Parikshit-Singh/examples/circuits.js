@@ -301,10 +301,10 @@ function buildSevenSegment(circuit) {
   inputs.forEach((input, index) => circuit.connect(input.id, 0, display.id, index));
   return { selectedId: display.id };
 }
-
+  
 function buildGateSRLatch(circuit) {
-  const s = addSwitch(circuit, "S̄", 110, 200, 0);
-  const r = addSwitch(circuit, "R̄", 110, 410, 0);
+  const s = addSwitch(circuit, "S̄", 110, 200, 1);
+  const r = addSwitch(circuit, "R̄", 110, 410, 1);
   const qStage = circuit.add("nand", 430, 220); qStage.name = "Q stage";
   const qnStage = circuit.add("nand", 430, 420); qnStage.name = "Q̄ stage";
   circuit.connect(s.id, 0, qStage.id, 0);

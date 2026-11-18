@@ -101,7 +101,7 @@ The folders are ownership boundaries for one integrated application, not separat
 
 ## Current Development Status
 
-The application is an early functional baseline with editable graph circuits, interactive SVG wiring, real combinational evaluation, selected sequential components, persistence, JSON transfer, multi-selection, clipboard operations, pan, saved-circuit rename/delete, and a 362-check browser logic suite. It does not yet meet every item in the full project specification. The implemented ripple counter does not model stage delays, and multi-bit buses, binary I/O, full history coverage, component rotation, and the complete example library remain unfinished.
+The application is an early functional baseline with editable graph circuits, interactive SVG wiring, real combinational evaluation, selected sequential components, persistence, JSON transfer, multi-selection, clipboard operations, pan, saved-circuit rename/delete, and a 378-check browser logic suite. It does not yet meet every item in the full project specification. The implemented ripple counter does not model stage delays, and multi-bit buses, binary I/O, full history coverage, component rotation, and the complete example library remain unfinished.
 
 ## Future Improvements
 

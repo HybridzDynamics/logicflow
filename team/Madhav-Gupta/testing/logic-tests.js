@@ -112,7 +112,8 @@ export function runLogicTests() {
     and: [1], or: [1], xor: [1], "half-adder": [0, 1], "half-subtractor": [1, 1],
     "full-adder": [0, 1], "full-subtractor": [0, 1], mux: [1], mux4: [1], decoder: [0, 1, 0, 0],
     encoder: [0, 1, 1], parity: [1], "d-flip-flop": [0, 1], counter: [0, 0, 0, 0], "pipo-register": [0, 0, 0, 0], "traffic-light": [1, 0, 0], "parity-checker": [1], "ripple-adder": [0],
-    "ripple-subtractor": [0], "equality-comparator": [1], "seven-segment": []
+    "ripple-subtractor": [0], "equality-comparator": [1], "seven-segment": [],
+    "sr-latch-gates": [1, 0], "d-latch-gates": [0, 1], "d-flipflop-gates": [0, 1]
   };
   for (const example of exampleCatalog) {
     const circuit = new Circuit();
@@ -242,6 +243,40 @@ export function runLogicTests() {
   assert("redo reapplies mutations", [history.redo()], [true]);
   const redoneComponent = historyCircuit.components.get(historyComponent.id);
   assert("redo restores mutated state", [redoneComponent.x, redoneComponent.configuration.value], [500, 1]);
+
+  const latchCircuit = new Circuit();
+  buildExample(latchCircuit, "sr-latch-gates");
+  const latchSim = new Simulation(latchCircuit);
+  latchSim.propagate();
+  const latchParts = [...latchCircuit.components.values()];
+  const latchSwitches = latchParts.filter((component) => component.type === "switch");
+  const latchStages = latchParts.filter((component) => component.type === "nand");
+  const latchQ = () => latchStages[0].outputs[0].value;
+  const latchQn = () => latchStages[1].outputs[0].value;
+  assert("SR latch powers up holding Q", [latchQ(), latchQn()], [1, 0]);
+  latchSwitches[1].configuration.value = 0;
+  latchSim.propagate();
+  assert("SR latch reset via R̄", [latchQ(), latchQn()], [0, 1]);
+  latchSwitches[1].configuration.value = 1; latchSwitches[0].configuration.value = 0;
+  latchSim.propagate();
+  assert("SR latch set via S̄", [latchQ(), latchQn()], [1, 0]);
+  latchSwitches[0].configuration.value = 1;
+  latchSim.propagate();
+  assert("SR latch holds after release", [latchQ(), latchQn()], [1, 0]);
+
+  const ffCircuit = new Circuit();
+  buildExample(ffCircuit, "d-flipflop-gates");
+  const ffSim = new Simulation(ffCircuit);
+  ffSim.propagate();
+  const ffClock = [...ffCircuit.components.values()].find((component) => component.type === "clock");
+  const ffD = [...ffCircuit.components.values()].find((component) => component.type === "switch");
+  const ffQ = () => [...ffCircuit.components.values()].filter((component) => component.type === "led")[0].inputs[0].value;
+  assert("gate DFF starts low", [ffQ()], [0]);
+  ffClock.configuration.value = 1; ffSim.stepClock(); ffClock.configuration.value = 0; ffSim.stepClock();
+  assert("gate DFF captures D=1", [ffQ()], [1]);
+  ffD.configuration.value = 0;
+  ffClock.configuration.value = 1; ffSim.stepClock(); ffClock.configuration.value = 0; ffSim.stepClock();
+  assert("gate DFF captures D=0", [ffQ()], [0]);
 
   return { checks, failures };
 }
