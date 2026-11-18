@@ -120,7 +120,8 @@ export function renderDiagram(svg, circuit, selectedId, selectedWireId, preview,
     animatedComponents.add(component);
     const group = element("g", { class: `node ${component.id === selectedId || selectedIds.has(component.id) ? "selected" : ""} ${isNew ? "node-enter" : ""}`, transform: `translate(${component.x} ${component.y})`, "data-component-id": component.id, tabindex: 0, role: "group", "aria-label": `${component.name}, component ${component.id}` });
     group.append(element("rect", { class: "node-body", width: NODE_WIDTH, height }));
-    group.append(element("text", { class: "node-title", x: 14, y: 24 }, component.name));
+    const displayName = component.name.length > 22 ? `${component.name.slice(0, 21)}…` : component.name;
+    group.append(element("text", { class: "node-title", x: 14, y: 24 }, displayName));
     group.append(element("text", { class: "node-subtitle", x: 14, y: 40 }, component.id.toUpperCase()));
     appendComponentSymbol(group, component);
     if (["led", "output"].includes(component.type)) {
