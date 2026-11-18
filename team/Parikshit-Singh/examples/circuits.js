@@ -302,6 +302,73 @@ function buildSevenSegment(circuit) {
   return { selectedId: display.id };
 }
 
+function buildGateSRLatch(circuit) {
+  const s = addSwitch(circuit, "S̄", 110, 200, 0);
+  const r = addSwitch(circuit, "R̄", 110, 410, 0);
+  const qStage = circuit.add("nand", 430, 220); qStage.name = "Q stage";
+  const qnStage = circuit.add("nand", 430, 420); qnStage.name = "Q̄ stage";
+  circuit.connect(s.id, 0, qStage.id, 0);
+  circuit.connect(qnStage.id, 0, qStage.id, 1);
+  circuit.connect(r.id, 0, qnStage.id, 0);
+  circuit.connect(qStage.id, 0, qnStage.id, 1);
+  qStage.outputs[0].value = 1; qnStage.outputs[0].value = 0;
+  const q = addLed(circuit, "Q", 720, 220);
+  const qn = addLed(circuit, "Q̄", 720, 420);
+  circuit.connect(qStage.id, 0, q.id, 0); circuit.connect(qnStage.id, 0, qn.id, 0);
+  return { selectedId: qStage.id };
+}
+
+function buildGateDLatch(circuit) {
+  const d = addSwitch(circuit, "D", 110, 160, 0);
+  const e = addSwitch(circuit, "E", 110, 370, 0);
+  const notD = circuit.add("not", 290, 170); notD.name = "D̄";
+  const t1 = circuit.add("nand", 470, 230); t1.name = "NAND (D·E)";
+  const t2 = circuit.add("nand", 470, 430); t2.name = "NAND (D̄·E)";
+  const qStage = circuit.add("nand", 700, 230); qStage.name = "Q stage";
+  const qnStage = circuit.add("nand", 700, 430); qnStage.name = "Q̄ stage";
+  circuit.connect(d.id, 0, t1.id, 0); circuit.connect(e.id, 0, t1.id, 1);
+  circuit.connect(d.id, 0, notD.id, 0); circuit.connect(notD.id, 0, t2.id, 0); circuit.connect(e.id, 0, t2.id, 1);
+  circuit.connect(t1.id, 0, qStage.id, 0); circuit.connect(qnStage.id, 0, qStage.id, 1);
+  circuit.connect(t2.id, 0, qnStage.id, 0); circuit.connect(qStage.id, 0, qnStage.id, 1);
+  qStage.outputs[0].value = 0; qnStage.outputs[0].value = 1;
+  const q = addLed(circuit, "Q", 940, 230);
+  const qn = addLed(circuit, "Q̄", 940, 430);
+  circuit.connect(qStage.id, 0, q.id, 0); circuit.connect(qnStage.id, 0, qn.id, 0);
+  return { selectedId: qStage.id };
+}
+
+function buildGateDFlipFlop(circuit) {
+  const d = addSwitch(circuit, "D", 90, 300, 1);
+  const clock = circuit.add("clock", 90, 540);
+  const notMasterD = circuit.add("not", 250, 220); notMasterD.name = "M D̄";
+  const mt1 = circuit.add("nand", 420, 180); mt1.name = "M t1";
+  const mt2 = circuit.add("nand", 420, 350); mt2.name = "M t2";
+  const mq = circuit.add("nand", 610, 180); mq.name = "M Q";
+  const mqn = circuit.add("nand", 610, 350); mqn.name = "M Q̄";
+  const notSlaveD = circuit.add("not", 700, 140); notSlaveD.name = "S D̄";
+  const notClock = circuit.add("not", 700, 540); notClock.name = "¬CLK";
+  const st1 = circuit.add("nand", 870, 180); st1.name = "S t1";
+  const st2 = circuit.add("nand", 870, 350); st2.name = "S t2";
+  const sq = circuit.add("nand", 1060, 180); sq.name = "Q stage";
+  const sqn = circuit.add("nand", 1060, 350); sqn.name = "Q̄ stage";
+  circuit.connect(d.id, 0, notMasterD.id, 0); circuit.connect(d.id, 0, mt1.id, 0);
+  circuit.connect(clock.id, 0, mt1.id, 1); circuit.connect(clock.id, 0, mt2.id, 1);
+  circuit.connect(notMasterD.id, 0, mt2.id, 0);
+  circuit.connect(mt1.id, 0, mq.id, 0); circuit.connect(mqn.id, 0, mq.id, 1);
+  circuit.connect(mt2.id, 0, mqn.id, 0); circuit.connect(mq.id, 0, mqn.id, 1);
+  circuit.connect(mq.id, 0, notSlaveD.id, 0); circuit.connect(mq.id, 0, st1.id, 0);
+  circuit.connect(clock.id, 0, notClock.id, 0);
+  circuit.connect(notClock.id, 0, st1.id, 1); circuit.connect(notClock.id, 0, st2.id, 1);
+  circuit.connect(notSlaveD.id, 0, st2.id, 0);
+  circuit.connect(st1.id, 0, sq.id, 0); circuit.connect(sqn.id, 0, sq.id, 1);
+  circuit.connect(st2.id, 0, sqn.id, 0); circuit.connect(sq.id, 0, sqn.id, 1);
+  mq.outputs[0].value = 0; mqn.outputs[0].value = 1; sq.outputs[0].value = 0; sqn.outputs[0].value = 1;
+  const q = addLed(circuit, "Q", 1270, 180);
+  const qn = addLed(circuit, "Q̄", 1270, 350);
+  circuit.connect(sq.id, 0, q.id, 0); circuit.connect(sqn.id, 0, qn.id, 0);
+  return { selectedId: mq.id };
+}
+
 export const exampleCatalog = [
   { id: "and", name: "AND gate", description: "Two switches drive an AND gate and LED.", builder: buildAnd },
   { id: "or", name: "OR gate", description: "See OR behavior with two interactive inputs.", builder: (circuit) => buildSingleGate(circuit, "or", [1, 0]) },
@@ -323,7 +390,10 @@ export const exampleCatalog = [
   { id: "ripple-adder", name: "4-bit Ripple-Carry Adder", description: "Four Full Adders propagate carry into a binary display.", builder: buildRippleAdder },
   { id: "ripple-subtractor", name: "4-bit Ripple-Borrow Subtractor", description: "Four Full Subtractors propagate borrow into a binary display.", builder: buildRippleSubtractor },
   { id: "equality-comparator", name: "2-bit Equality Comparator", description: "XNOR gates compare each bit; an AND reports equality.", builder: buildEqualityComparator },
-  { id: "seven-segment", name: "Seven-Segment Hex Display", description: "Four switches drive a live hexadecimal digit display.", builder: buildSevenSegment }
+  { id: "seven-segment", name: "Seven-Segment Hex Display", description: "Four switches drive a live hexadecimal digit display.", builder: buildSevenSegment },
+  { id: "sr-latch-gates", name: "SR Latch (NAND gates)", description: "Cross-coupled NAND gates form a set-dominant latch; S̄/R̄ are active-low.", builder: buildGateSRLatch },
+  { id: "d-latch-gates", name: "D Latch (NAND gates)", description: "Four NAND gates and a NOT gate build a transparent D latch with enable E.", builder: buildGateDLatch },
+  { id: "d-flipflop-gates", name: "D Flip-Flop (gate-level)", description: "A master-slave D flip-flop built from eight NAND and three NOT gates; use Step to clock it.", builder: buildGateDFlipFlop }
 ];
 
 export function buildExample(circuit, exampleId) {
