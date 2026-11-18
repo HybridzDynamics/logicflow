@@ -53,6 +53,7 @@ function toggleSwitch(componentId) {
 }
 
 function addComponent(type, x, y) {
+  if (!definitions[type]) { showMessage(`Unsupported component: ${type}`); return; }
   try {
     state.history.checkpoint();
     const placement = state.circuit.components.size;
@@ -108,18 +109,34 @@ function minimizeSop(rows, inputNames, outputIndex) {
     const broader = `${pattern.slice(0, index)}-${pattern.slice(index + 1)}`;
     return validPatterns.has(broader);
   }));
+  const termCovers = (term, value) => term.split("").every((bit, index) => bit === "-" || bit === String((value >> (variableCount - index - 1)) & 1));
   let best = null;
-  for (let selection = 1; selection < (1 << primes.length); selection += 1) {
-    const terms = primes.filter((_, index) => selection & (1 << index));
-    if (best && terms.length > best.length) continue;
-    const covered = new Set();
-    terms.forEach((term) => onSet.forEach((value) => {
-      if (term.split("").every((bit, index) => bit === "-" || bit === String((value >> (variableCount - index - 1)) & 1))) covered.add(value);
-    }));
-    if (covered.size !== onSet.length) continue;
-    const literals = terms.reduce((count, term) => count + [...term].filter((bit) => bit !== "-").length, 0);
-    const bestLiterals = best?.reduce((count, term) => count + [...term].filter((bit) => bit !== "-").length, Infinity) ?? Infinity;
-    if (!best || terms.length < best.length || (terms.length === best.length && literals < bestLiterals)) best = terms;
+  if (primes.length <= 12) {
+    for (let selection = 1; selection < (1 << primes.length); selection += 1) {
+      const terms = primes.filter((_, index) => selection & (1 << index));
+      if (best && terms.length > best.length) continue;
+      const covered = new Set();
+      terms.forEach((term) => onSet.forEach((value) => { if (termCovers(term, value)) covered.add(value); }));
+      if (covered.size !== onSet.length) continue;
+      const literals = terms.reduce((count, term) => count + [...term].filter((bit) => bit !== "-").length, 0);
+      const bestLiterals = best?.reduce((count, term) => count + [...term].filter((bit) => bit !== "-").length, Infinity) ?? Infinity;
+      if (!best || terms.length < best.length || (terms.length === best.length && literals < bestLiterals)) best = terms;
+    }
+  } else {
+    const uncovered = new Set(onSet);
+    best = [];
+    while (uncovered.size) {
+      let pick = null;
+      let pickCount = 0;
+      for (const term of primes) {
+        const count = [...uncovered].filter((value) => termCovers(term, value)).length;
+        if (count > pickCount) { pick = term; pickCount = count; }
+      }
+      if (!pick) break;
+      best.push(pick);
+      for (const value of [...uncovered]) if (termCovers(pick, value)) uncovered.delete(value);
+    }
+    if (uncovered.size) best = null;
   }
   return (best || []).map((term) => {
     const literals = [...term].flatMap((bit, index) => bit === "-" ? [] : [`${bit === "0" ? "!" : ""}${inputNames[index]}`]);
@@ -222,7 +239,13 @@ function renderInspector() {
   inspector.append(title, id);
   inspector.append(inspectorAction("Duplicate component", duplicateSelection));
   const nameInput = document.createElement("input"); nameInput.type = "text"; nameInput.value = component.name; nameInput.setAttribute("aria-label", "Component name");
-  nameInput.addEventListener("change", () => { component.name = nameInput.value.trim() || definitions[component.type].label; render(); });
+  nameInput.addEventListener("change", () => {
+    const next = nameInput.value.trim() || definitions[component.type].label;
+    if (next === component.name) { render(); return; }
+    state.history.checkpoint();
+    component.name = next.slice(0, 80);
+    render();
+  });
   inspector.append(inspectorSection("Name", nameInput));
   for (const [titleText, pins] of [["Inputs", component.inputs], ["Outputs", component.outputs]]) {
     if (!pins.length) continue;
@@ -273,8 +296,10 @@ function render() {
 }
 
 function screenPoint(event) {
+  const ctm = svg.getScreenCTM();
+  if (!ctm) return { x: 0, y: 0 };
   const point = svg.createSVGPoint(); point.x = event.clientX; point.y = event.clientY;
-  const transformed = point.matrixTransform(svg.getScreenCTM().inverse());
+  const transformed = point.matrixTransform(ctm.inverse());
   return { x: transformed.x, y: transformed.y };
 }
 
@@ -360,7 +385,7 @@ function loadExample(exampleId) {
   stopSimulation();
   state.circuit = circuit; state.simulation = new Simulation(circuit); state.history = new History(circuit);
   state.circuitName = example.name; state.selectedId = example.selectedId; state.selectedIds = new Set([example.selectedId]); state.selectedWireId = null;
-  state.wireStart = null; state.preview = null; state.clockHigh = false;
+  state.wireStart = null; state.preview = null; state.clockHigh = false; state.moving = null; state.pan = null; state.pasteOffset = 44;
   safeRun(); fitCircuit(); showMessage(`${example.name} loaded`);
 }
 
@@ -454,7 +479,9 @@ function showCircuitDialog(mode, renameFrom = "") {
       const openButton = document.createElement("button"); openButton.type = "button"; openButton.className = "saved-circuit-button"; openButton.textContent = name;
       openButton.addEventListener("click", () => {
         try {
-          state.circuit = new Circuit(loadCircuit(name)); state.simulation = new Simulation(state.circuit); state.history = new History(state.circuit); state.circuitName = name; state.selectedId = null; state.selectedIds.clear(); state.selectedWireId = null;
+          const saved = loadCircuit(name);
+          if (!saved) throw new Error("Saved circuit no longer exists.");
+          state.circuit = new Circuit(saved); state.simulation = new Simulation(state.circuit); state.history = new History(state.circuit); state.circuitName = name; state.selectedId = null; state.selectedIds.clear(); state.selectedWireId = null; state.wireStart = null; state.preview = null;
           dialog.close(); safeRun(); showMessage(`Opened ${name}`);
         } catch (error) { showMessage(`Could not open circuit: ${error.message}`); }
       });
@@ -462,7 +489,7 @@ function showCircuitDialog(mode, renameFrom = "") {
       const deleteButton = document.createElement("button"); deleteButton.type = "button"; deleteButton.className = "saved-circuit-tool danger"; deleteButton.textContent = "Delete"; deleteButton.setAttribute("aria-label", `Delete ${name}`);
       deleteButton.addEventListener("click", () => {
         try {
-          deleteCircuit(name);
+          if (!deleteCircuit(name)) { showMessage("Could not delete the saved circuit."); return; }
           if (state.circuitName === name) state.circuitName = "Untitled circuit";
           row.remove(); render(); showMessage(`Deleted ${name}`);
           if (!savedList.children.length) { const empty = document.createElement("p"); empty.textContent = "No saved circuits yet."; body.replaceChildren(empty); }
@@ -479,7 +506,7 @@ function showCircuitDialog(mode, renameFrom = "") {
 function runAction(action) {
   switch (action) {
     case "new":
-      stopSimulation(); state.circuit = new Circuit(); state.simulation = new Simulation(state.circuit); state.history = new History(state.circuit); state.circuitName = "Untitled circuit"; state.selectedId = null; state.selectedIds.clear(); state.selectedWireId = null; render(); showMessage("New circuit"); break;
+      stopSimulation(); state.circuit = new Circuit(); state.simulation = new Simulation(state.circuit); state.history = new History(state.circuit); state.circuitName = "Untitled circuit"; state.selectedId = null; state.selectedIds.clear(); state.selectedWireId = null; state.wireStart = null; state.preview = null; state.moving = null; state.pan = null; state.clockHigh = false; state.pasteOffset = 44; render(); showMessage("New circuit"); break;
     case "save": showCircuitDialog("save"); break;
     case "open": showCircuitDialog("open"); break;
     case "import": get("#import-file").click(); break;
@@ -487,11 +514,12 @@ function runAction(action) {
       const blob = new Blob([exportCircuit(state.circuitName, state.circuit)], { type: LOGICFLOW_MIME_TYPE });
       const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `${state.circuitName.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "logicflow-circuit"}${LOGICFLOW_FILE_EXTENSION}`; link.click(); URL.revokeObjectURL(link.href); showMessage("Circuit exported as a LogicFlow file"); break;
     }
-    case "undo": if (state.history.undo()) { state.simulation = new Simulation(state.circuit); state.selectedId = null; state.selectedIds.clear(); safeRun(); showMessage("Undo"); } else showMessage("Nothing to undo"); break;
-    case "redo": if (state.history.redo()) { state.simulation = new Simulation(state.circuit); state.selectedId = null; state.selectedIds.clear(); safeRun(); showMessage("Redo"); } else showMessage("Nothing to redo"); break;
+    case "undo": if (state.history.undo()) { state.simulation = new Simulation(state.circuit); state.selectedId = null; state.selectedIds.clear(); state.selectedWireId = null; safeRun(); showMessage("Undo"); } else showMessage("Nothing to undo"); break;
+    case "redo": if (state.history.redo()) { state.simulation = new Simulation(state.circuit); state.selectedId = null; state.selectedIds.clear(); state.selectedWireId = null; safeRun(); showMessage("Redo"); } else showMessage("Nothing to redo"); break;
     case "run":
+      if (state.running) { stopSimulation(); showMessage("Simulation paused"); break; }
       if (!state.circuit.components.size) { stopSimulation(); showMessage("Add a component before starting simulation."); break; }
-      if (!state.running) { state.running = true; state.clockController.start(); safeRun(); render(); showMessage("Simulation running"); }
+      state.running = true; state.clockController.start(); safeRun(); render(); showMessage("Simulation running");
       break;
     case "step": advanceClock(); showMessage("Clock stepped"); break;
     case "pause": stopSimulation(); showMessage("Simulation paused"); break;
@@ -652,7 +680,10 @@ get("#import-file").addEventListener("change", async (event) => {
   try {
     const data = parseCircuitFile(await file.text());
     const circuit = new Circuit(data);
-    state.circuit = circuit; state.simulation = new Simulation(circuit); state.history = new History(circuit); state.circuitName = String(data.name || file.name.replace(/\.json$/i, "")); state.selectedId = null; safeRun(); showMessage("Circuit imported");
+    state.circuit = circuit; state.simulation = new Simulation(circuit); state.history = new History(circuit);
+    state.circuitName = String(data.name || file.name.replace(/\.(logicflow|json)$/i, "")).slice(0, 80) || "Imported circuit";
+    state.selectedId = null; state.selectedIds.clear(); state.selectedWireId = null; state.wireStart = null; state.preview = null; state.moving = null; state.pan = null; state.clockHigh = false; state.pasteOffset = 44;
+    safeRun(); showMessage("Circuit imported");
   } catch (error) { showMessage(`Import rejected: ${error.message}`); }
   event.target.value = "";
 });
@@ -661,7 +692,8 @@ document.addEventListener("keydown", (event) => {
   if (event.target.matches("[data-switch-toggle]") && ["Enter", " "].includes(event.key)) {
     toggleSwitch(event.target.dataset.switchToggle); event.preventDefault(); return;
   }
-  if (event.target.matches("input, textarea")) return;
+  if (event.target.matches("input, textarea, select")) return;
+  if (document.querySelector("dialog[open]")) return;
   if (event.key === "Delete" || event.key === "Backspace") { deleteSelection(); event.preventDefault(); }
   else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") { runAction(event.shiftKey ? "redo" : "undo"); event.preventDefault(); }
   else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "y") { runAction("redo"); event.preventDefault(); }
@@ -670,7 +702,7 @@ document.addEventListener("keydown", (event) => {
   else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "a") { state.selectedIds = new Set(state.circuit.components.keys()); state.selectedId = [...state.selectedIds].at(-1) || null; state.selectedWireId = null; render(); event.preventDefault(); }
   else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "c") { copySelection(); event.preventDefault(); }
   else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "v") { pasteSelection(); event.preventDefault(); }
-  else if (event.key === "Escape") { state.wireStart = null; state.preview = null; render(); }
+  else if (event.key === "Escape") { state.wireStart = null; state.preview = null; state.selectedId = null; state.selectedIds.clear(); state.selectedWireId = null; state.pan = null; state.moving = null; render(); }
   else if (event.key === " ") { runAction(state.running ? "pause" : "run"); event.preventDefault(); }
 });
 

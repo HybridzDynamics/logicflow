@@ -5,14 +5,17 @@ export function isRegister(type) { return registerTypes.has(type); }
 export function evaluateRegister(component, input) {
   if (!isRegister(component.type)) return false;
   const state = component.state;
-  const width = state.width || 4;
+  const requestedWidth = Number(state.width);
+  const width = Number.isInteger(requestedWidth) && requestedWidth >= 1 ? Math.min(16, requestedWidth) : 4;
+  const rawValue = Number(state.value);
+  state.value = Number.isFinite(rawValue) ? Math.floor(rawValue) : 0;
   const mask = (1 << width) - 1;
   if (["siso4", "sipo4"].includes(component.type)) {
     state.serialOut = (state.value >> (width - 1)) & 1;
     state.value = ((state.value << 1) | input(0)) & mask;
   } else if (component.type === "piso4") {
     if (input(width)) state.value = component.inputs.slice(0, width).reduce((value, pin, index) => value | (Number(Boolean(pin.value)) << index), 0);
-    else { state.serialOut = state.value & 1; state.value >>= 1; }
+    else { state.serialOut = state.value & 1; state.value = (state.value >> 1) & mask; }
   } else if (input(width)) {
     state.value = component.inputs.slice(0, width).reduce((value, pin, index) => value | (Number(Boolean(pin.value)) << index), 0);
   }

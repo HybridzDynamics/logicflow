@@ -183,5 +183,49 @@ export function runLogicTests() {
     else localStorage.setItem(storageKey, previousStorage);
   }
 
+  const collisionBase = new Circuit();
+  const collisionSwitch = collisionBase.add("switch", 0, 0, { value: 1 });
+  const collisionLed = collisionBase.add("led", 60, 0);
+  collisionBase.connect(collisionSwitch.id, 0, collisionLed.id, 0);
+  const collisionDoc = collisionBase.serialize();
+  collisionDoc.components[0].id = "c2";
+  collisionDoc.components[1].id = "widget";
+  collisionDoc.wires[0].sourceId = "c2";
+  collisionDoc.wires[0].targetId = "widget";
+  const collisionCircuit = new Circuit(collisionDoc);
+  assert("load keeps saved IDs without duplication", [collisionCircuit.components.size, collisionCircuit.wires.size], [2, 1]);
+  assert("load resolves wires to saved IDs", [[...collisionCircuit.wires.values()][0].sourceId, [...collisionCircuit.wires.values()][0].targetId], ["c2", "widget"]);
+
+  const stateDoc = collisionBase.serialize();
+  stateDoc.components[0].id = "stateful";
+  stateDoc.components[1].id = "stateful-led";
+  stateDoc.wires[0].sourceId = "stateful";
+  stateDoc.wires[0].targetId = "stateful-led";
+  stateDoc.components[0].state = { value: "not-a-number", q: Number.NaN };
+  const stateCircuit = new Circuit(stateDoc);
+  assert("load sanitizes sequential state", [stateCircuit.components.get("stateful").state.value], [0]);
+
+  let duplicateIdRejected = false;
+  try {
+    const duplicateDoc = collisionBase.serialize();
+    duplicateDoc.components[1].id = duplicateDoc.components[0].id;
+    new Circuit(duplicateDoc);
+  } catch { duplicateIdRejected = true; }
+  assert("duplicate component IDs rejected", [Number(duplicateIdRejected)], [1]);
+
+  let invalidJsonRejected = false;
+  try { parseCircuitFile("{not valid json"); } catch { invalidJsonRejected = true; }
+  assert("invalid JSON import rejected", [Number(invalidJsonRejected)], [1]);
+
+  try {
+    saveCircuit("__proto__", saved);
+    assert("proto-named circuit saves and loads", [Number(Boolean(loadCircuit("__proto__")))], [1]);
+    deleteCircuit("__proto__");
+    assert("proto-named circuit deletes", [Number(Boolean(loadCircuit("__proto__")))], [0]);
+    let emptyNameRejected = false;
+    try { saveCircuit("   ", saved); } catch { emptyNameRejected = true; }
+    assert("empty circuit name rejected", [Number(emptyNameRejected)], [1]);
+  } catch (error) { failures.push(`hardened storage operations: ${error.message}`); checks += 1; }
+
   return { checks, failures };
 }

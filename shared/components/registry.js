@@ -72,8 +72,16 @@ export function registerComponent(registration) {
 }
 
 export function initialState(type, configuration = {}) {
-  if (type.toLowerCase().includes("counter")) return { value: type === "ringCounter4" ? 1 : 0, lastClock: 0, modulo: Number(configuration.modulo) || (type === "moduloCounter4" ? 10 : 16) };
-  if (["siso4", "sipo4", "piso4", "pipo4"].includes(type)) return { value: 0, lastClock: 0, width: Number(configuration.width) || 4 };
+  if (type.toLowerCase().includes("counter")) {
+    const requested = Number(configuration.modulo);
+    const modulo = Number.isInteger(requested) && requested >= 1 ? Math.min(16, requested) : (type === "moduloCounter4" ? 10 : 16);
+    return { value: type === "ringCounter4" ? 1 : 0, lastClock: 0, modulo };
+  }
+  if (["siso4", "sipo4", "piso4", "pipo4"].includes(type)) {
+    const requestedWidth = Number(configuration.width);
+    const width = Number.isInteger(requestedWidth) && requestedWidth >= 1 ? Math.min(16, requestedWidth) : 4;
+    return { value: 0, lastClock: 0, width };
+  }
   return { q: 0, lastClock: 0, master: 0 };
 }
 

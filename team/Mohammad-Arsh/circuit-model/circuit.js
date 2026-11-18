@@ -6,13 +6,20 @@ export class Circuit {
     if (data) this.load(data);
   }
 
-  add(type, x = 120, y = 120, configuration = {}) {
+  add(type, x = 120, y = 120, configuration = {}, componentId) {
     const definition = definitions[type];
     if (!definition) throw new Error(`Unsupported component: ${type}`);
     if (!configuration || typeof configuration !== "object" || Array.isArray(configuration)) throw new Error("Component configuration must be an object.");
     x = finiteNumber(x, null);
     y = finiteNumber(y, null);
-    const id = `c${this.nextId++}`;
+    let id;
+    if (componentId === undefined) {
+      do { id = `c${this.nextId++}`; } while (this.components.has(id));
+    } else {
+      id = String(componentId);
+      if (!id) throw new Error("Component ID cannot be empty.");
+      if (this.components.has(id)) throw new Error(`Component ID already exists: ${id}`);
+    }
     const component = {
       id, type, name: definition.label, x, y, rotation: 0,
       configuration: { ...definition.configuration, ...configuration },
@@ -30,7 +37,8 @@ export class Circuit {
     if (!source || !target) throw new Error("Both components must exist.");
     if (!source.outputs[sourcePort] || !target.inputs[targetPort]) throw new Error("A wire must connect an output to an input.");
     if (this.wires.has(`${targetId}:${targetPort}`)) throw new Error("That input already has a wire.");
-    const id = `w${this.nextId++}`;
+    let id;
+    do { id = `w${this.nextId++}`; } while (this.wires.has(id));
     this.wires.set(id, { id, sourceId, sourcePort, targetId, targetPort });
     return id;
   }
@@ -84,18 +92,16 @@ export class Circuit {
     for (const saved of data.components) {
       if (!saved || typeof saved !== "object" || Array.isArray(saved)) throw new Error("Circuit contains an invalid component.");
       const componentId = String(saved.id || "");
-      if (!componentId || ids.has(componentId)) throw new Error("Circuit contains a missing or duplicate component ID.");
+      if (!componentId || componentId.length > 128 || ids.has(componentId)) throw new Error("Circuit contains a missing, duplicate, or invalid component ID.");
       ids.add(componentId);
-      const component = candidate.add(saved.type, finiteNumber(saved.x, null), finiteNumber(saved.y, null), saved.configuration || {});
-      component.id = componentId;
+      const component = candidate.add(saved.type, finiteNumber(saved.x, null), finiteNumber(saved.y, null), saved.configuration || {}, componentId);
       component.name = typeof saved.name === "string" ? saved.name.slice(0, 80) : component.name;
       component.rotation = Number(saved.rotation) || 0;
       if (!Array.isArray(saved.inputs) || !Array.isArray(saved.outputs) || saved.inputs.length !== component.inputs.length || saved.outputs.length !== component.outputs.length) throw new Error("A component has invalid pins.");
       for (const pin of [...saved.inputs, ...saved.outputs]) if (![0, 1].includes(Number(pin?.value))) throw new Error("Circuit pins must contain binary values.");
       component.inputs = component.inputs.map((pin, index) => ({ ...pin, value: Number(saved.inputs[index].value) }));
       component.outputs = component.outputs.map((pin, index) => ({ ...pin, value: Number(saved.outputs[index].value) }));
-      component.state = saved.state && typeof saved.state === "object" ? structuredClone(saved.state) : component.state;
-      candidate.components.set(component.id, component);
+      component.state = saved.state && typeof saved.state === "object" && !Array.isArray(saved.state) ? sanitizeState(saved.state) : component.state;
     }
     for (const wire of data.wires) {
       if (!wire || typeof wire !== "object" || !Number.isInteger(Number(wire.sourcePort)) || !Number.isInteger(Number(wire.targetPort))) throw new Error("Circuit contains an invalid wire.");
@@ -111,3 +117,16 @@ export class Circuit {
 
 import { definitions, initialState } from "../../../shared/components/registry.js";
 import { finiteNumber } from "../../../shared/utilities/numbers.js";
+
+const STATE_NUMERIC_FIELDS = ["value", "q", "master", "serialOut", "lastClock", "width", "modulo", "invalid"];
+
+function sanitizeState(state) {
+  const clone = structuredClone(state);
+  for (const key of STATE_NUMERIC_FIELDS) {
+    if (key in clone) {
+      const number = Number(clone[key]);
+      clone[key] = Number.isFinite(number) ? number : 0;
+    }
+  }
+  return clone;
+}

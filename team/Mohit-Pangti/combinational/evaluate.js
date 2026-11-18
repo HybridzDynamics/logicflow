@@ -8,7 +8,6 @@ import { definitions } from "../../../shared/components/registry.js";
 const bit = (value) => Number(Boolean(value));
 
 export function evaluateCombinational(component) {
-  const v = component.inputs.map((pin) => bit(pin.value));
   const c = component.configuration;
   const registeredEvaluator = definitions[component.type]?.evaluate;
   if (registeredEvaluator) return registeredEvaluator(component);
